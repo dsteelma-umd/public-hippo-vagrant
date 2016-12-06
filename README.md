@@ -84,9 +84,12 @@ $ vagrant ssh -- tail -f /apps/cms/tomcat-site2/logs/catalina.out
 Once both Tomcats start up, you should have a functioning web application on the
 following URLs:
 
-* Site: <http://192.168.55.10/site/>
-* CMS: <http://192.168.55.10/cms/>
-* CMS Console: <http://192.168.55.10/cms/console/>
+* Site: <http://192.168.55.10:9600/site/>
+* CMS: <http://192.168.55.10:9605/cms/>
+* CMS Console: <http://192.168.55.10:9605/cms/console/>
+
+In order to make channel manager work, change the property rest.uri in /hippo:configuration/hippo:frontend/cms/cms-services/hstRestProxyService.
+rest.uri=http://127.0.0.1:9605/site/_cmsrest
 
 ## Structure
 
