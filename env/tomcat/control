@@ -5,7 +5,7 @@
 # 
 #
 ### BEGIN INIT INFO
-# Provides: tomcat6
+# Provides: tomcat8
 # Default-Start:
 # Default-Stop:
 # Description:  tomcat start, stop, restart, status
@@ -15,7 +15,7 @@
 export JAVA_HOME=/apps/java
 export JRE_HOME=/apps/java/jre
 
-export CATALINA_HOME=/apps/apache-tomcat-7.0.57
+export CATALINA_HOME=/apps/apache-tomcat-8.0.39
 export CATALINA_BASE=$(pwd)
 
 source conf/env-config.properties

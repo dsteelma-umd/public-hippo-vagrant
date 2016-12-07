@@ -58,7 +58,7 @@ If HIPPO_VERION is 7.8.9-1, public-7.8.9-1-cms-distribution.tar.gz and public-7.
 
 ```
 To start vagrant:
-$ HIPPO_VERSION=7.8.9-1 vagrant up
+$ HIPPO_VERSION=10.1.2-1 vagrant up
 $ vagrant ssh
 ```
 
@@ -111,14 +111,14 @@ rest.uri=http://127.0.0.1:9605/site/_cmsrest
 Within the **/apps/cms** directory on the VM, there is a parallel structure of 2
 directories each for the CMS and the Site. These are:
 
-* **tomcat-{cms,site}:** `CATALINA_BASE` directory containing the Tomcat runtime
+* **tomcat-{cms,site1,site2}:** `CATALINA_BASE` directory containing the Tomcat runtime
   configuration files (including the repository.xml), the logs, and control
   script.
-* **storage-{cms,site}:** Hippo local repository storage. Note that each
+* **storage-{cms,site1,site2}:** Hippo local repository storage. Note that each
   instance needs its own storage directory, though they both use the same
   PostgreSQL database for persistance storage. This location is set using the
   `repo_path` environment variable in the
-  **tomcat-{cms,site}/conf/env-config.properties** file.
+  **tomcat-{cms,site1,site2}/conf/env-config.properties** file.
 
 There are two additional directories:
 

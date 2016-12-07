@@ -4,7 +4,7 @@
 # Usage: hippo.sh [version]
 
 # need the Postgres JDBC
-PGSQL_JDBC_VERSION=8.4-702.jdbc4
+PGSQL_JDBC_VERSION=9.4.1212
 PGSQL_JDBC=/vagrant/dist/postgresql-${PGSQL_JDBC_VERSION}.jar
 if [ ! -e "$PGSQL_JDBC" ]; then
     PGSQL_JDBC_URL=https://jdbc.postgresql.org/download/postgresql-${PGSQL_JDBC_VERSION}.jar
@@ -12,7 +12,7 @@ if [ ! -e "$PGSQL_JDBC" ]; then
 fi
 
 # deploy Hippo from dist tarballs
-HIPPO_VERSION=${1:-7.8.9}
+HIPPO_VERSION=${1:-10.1.1-0}
 
 # Load the tar files
 for APP in cms site; do

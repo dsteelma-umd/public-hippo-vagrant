@@ -101,6 +101,18 @@
         <appender-ref ref="console"/>
     </logger>
     
+    <!-- Freemarker errors -->
+    <logger name="org.hippoecm.hst.servlet.HstFreemarkerServlet" additivity="false">
+        <level value="warn"/>
+        <appender-ref ref="freemarker-warnings"/>
+    </logger>
+
+    <logger name="freemarker.servlet" additivity="false">
+    <!-- freemarker servket errors will be logged by HstFreemarkerServlet -->
+        <level value="fatal" />
+        <appender-ref ref="freemarker-warnings" />
+    </logger>
+
     <logger additivity="false" name="org.apache.cxf">
         <level value="warn"/>
         <appender-ref ref="site"/>
