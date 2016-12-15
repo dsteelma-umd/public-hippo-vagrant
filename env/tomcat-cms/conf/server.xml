@@ -26,7 +26,6 @@
 
   <!--APR library loader. Documentation at /docs/apr.html -->
   <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
-  <!--Initialize Jasper prior to webapps are loaded. Documentation at /docs/jasper-howto.html -->
   <!-- Prevent memory leaks due to use of particular java/javax APIs-->
   <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
@@ -174,7 +173,7 @@
         >
            <Resource
              name="jdbc/repositoryDS" auth="Container" type="javax.sql.DataSource"
-             maxActive="20" maxIdle="10" minIdle="2" initialSize="2" maxWait="10000"
+             maxTotal="20" maxIdle="10" minIdle="2" initialSize="2" maxWaitMillis="10000"
              testOnBorrow="true" validationQuery="select 1"
              poolPreparedStatements="true"
              username="hippo" password="hippo"

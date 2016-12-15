@@ -20,7 +20,8 @@ export CATALINA_BASE=$(pwd)
 
 source conf/env-config.properties
 
-export JAVA_OPTS="-Djava.awt.headless=true -Dfile.encoding=UTF-8 -server -Xms384m -Xmx1024m -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:PermSize=256m -XX:MaxPermSize=256m"
+export JAVA_OPTS="-Djava.awt.headless=true -Dfile.encoding=UTF-8 -server -Xms384m -Xmx4096m -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=256m"
+
 
 CATALINA_PID=${CATALINA_BASE}/catalina.pid
 
