@@ -6,7 +6,7 @@ HippoCMS development Vagrant environment
 
 - VirtualBox
 - Vagrant
-- Oracle JDK 7 tar.gz (to be installed into the VM)
+- Oracle JDK 8 tar.gz (to be installed into the VM)
 - [Hippo source code](https://github.com/umd-lib/public-hippo)
 
 Due to the need to manually click through Oracle's license agreement in order to
@@ -17,7 +17,7 @@ and place it in a `dist/` subdirectory of the `public-hippo-vagrant` checkout
 directory.
 
 The bootstrap provisioning script will pick up any `jdk-*.tar.gz` file, but note
-that production is currently using Java 7u71, so that is the recommended version
+that production is currently using Java 8u112, so that is the recommended version
 to use for local development.
 
 ## Usage
@@ -25,10 +25,18 @@ to use for local development.
 ### Check out the Vagrant
 
 ```
-$ cd /apps/git
-$ git clone git@github.com:umd-lib/public-hippo-vagrant.git
+> git clone git@github.com:umd-lib/public-hippo-vagrant.git
 ```
 
+### Checkout the "env" repositories for the website and CMS
+
+These should be placed in the same directory as the "public-hippo-vagrant"
+directory:
+
+```
+> git clone https://github.com/umd-lib/public-hippo-cms-env.git
+> git clone https://github.com/umd-lib/public-hippo-site-env.git
+```
 ### Check out and compile the Hippo webapps
 
 **Note:** the UMD public-hippo repository is private.
@@ -37,7 +45,7 @@ $ git clone git@github.com:umd-lib/public-hippo-vagrant.git
 $ git clone git@github.com:umd-lib/public-hippo.git
 $ cd public-hippo
 $ mvn clean install
-$ mvn -P separate-dist -pl '!repository-war'
+$ mvn -P split-dist -pl '!repository-war'
 $ cp target/*.tar.gz ../public-hippo-vagrant/dist
 ```
 
@@ -48,33 +56,65 @@ See the [Prerequisites section](#prerequisites) for instructions.
 ### Bring up the Vagrant and start Tomcats
 
 The [hippo.sh](scripts/hippo.sh) provisioning script currently looks for
-distribution tarballs for Hippo version 7.8.9. If you deploy different version, you have to change that by setting the
+distribution tarballs for Hippo version 10.1.1-0. If you deploy different version, you have to change that by setting the
 `HIPPO_VERSION` environment variable before running `vagrant up`. The UMD Hippo server distribution tarballs should be copied to public-hippo-vagrant/dist directory.
 
 ```
-If HIPPO_VERION is 7.8.9-1, public-7.8.9-1-cms-distribution.tar.gz and public-7.8.9-1-site-distribution.tar.gz shall be in public-hippo-vagrant/dist.
+If HIPPO_VERION is 11.2.4-0, public-11.2.4-0-cms-split-distribution.tar.gz and public-11.2.4-0-site-split-distribution.tar.gz shall be in public-hippo-vagrant/dist.
 ```
 
 
 ```
 To start vagrant:
-$ HIPPO_VERSION=10.1.2-1 vagrant up
-$ vagrant ssh
+$ HIPPO_VERSION=11.2.4-0 vagrant up
 ```
 
-In the VM:
+This will create three virtual machines:
+
+* postgres - Runs the Postgres server
+* cms - Runs the CMS
+* site - Runs the website
+
+To access a particular VM, user:
 
 ```
-vagrant@wwwlocal$ cd /apps/cms/
-vagrant@wwwlocal$ ./control start
+> vagrant ssh <VM_NAME>
 ```
+
+where "<VM_NAME>" is the name of the virtual machine. For example, to access the
+CMS virtual machine:
+
+```
+> vagrant ssh cms
+```
+
+The CMS and site are not started automatically. To run the CMS, do the
+following:
+
+1) Login to the CMS virual machine:
+
+```
+> vagrant ssh cms
+```
+
+2) Switch to the "/apps/cms" directory and run the "control" script:
+
+```
+cms> cd /apps/cms/
+cms> ./control start
+```
+
+Note: The first time the CMS is run, it may take several minutes (or longer) to
+start, due to the need to populate the Postgres database with the bootstrap
+data. See the "Refreshing the repository to shorten the development cycle"
+section below for information on how to prepopulate the Postgres database.
 
 You can watch the Tomcat log in a separate window by doing:
 
 ```
 $ cd /apps/git/public-hippo-vagrant
 # for the cms:
-$ vagrant ssh -- tail -f /apps/cms/tomcat-cms/logs/catalina.out
+$ vagrant ssh cms -- tail -f /apps/cms/tomcat/logs/catalina.out
 # or for the site:
 $ vagrant ssh -- tail -f /apps/cms/tomcat-site1/logs/catalina.out
 # or for the site2:
@@ -84,9 +124,9 @@ $ vagrant ssh -- tail -f /apps/cms/tomcat-site2/logs/catalina.out
 Once both Tomcats start up, you should have a functioning web application on the
 following URLs:
 
-* Site: <http://192.168.55.10:9600/site/>
-* CMS: <http://192.168.55.10:9605/cms/>
-* CMS Console: <http://192.168.55.10:9605/cms/console/>
+* CMS: <http://192.168.55.10/>
+* CMS Console: <http://192.168.55.10/console/>
+* Site: <http://192.168.55.20/>
 
 In order to make channel manager work, change the property rest.uri in /hippo:configuration/hippo:frontend/cms/cms-services/hstRestProxyService.
 rest.uri=http://127.0.0.1:9605/site/_cmsrest
@@ -97,11 +137,6 @@ rest.uri=http://127.0.0.1:9605/site/_cmsrest
   Tomcat, etc.); these are not stored under version control
 * **[env/](env):** Config files copied by the shell provisioner
   [scripts](scripts)
-    * **[tomcat/](env/tomcat):** Configuration that is common between the CMS
-      and Site Tomcats
-    * **[tomcat-cms/](env/tomcat-cms):** CMS Tomcat-specific configuration
-    * **[tomcat-site1/](env/tomcat-site1):** CMS Tomcat-specific configuration
-    * **[tomcat-site2/](env/tomcat-site2):** CMS Tomcat-specific configuration
 * **[manifests/](manifests):** Puppet manifests for provisioning
 * **[scripts/](scripts):** Shell scripts for provisioning
 * **[Vagrantfile](Vagrantfile):** The Vagrantfile that controls it all
@@ -125,7 +160,7 @@ There are two additional directories:
 * **utilities:** Public utilities (e.g. the DBFinder loader script).
 * **webapps:** WAR files. Note that the **public-hippo-$VERSION-site.war** file
   is shared between the two Tomcat instances.
-  
+
 ## Refreshing the repository to shorten the development cycle
 
 Once the environment is up, the cms and site have been started (to get the bootstrap loaded into the repository), and any modifications you wish to make to the repository hae been made, save the repository database to a backup file.

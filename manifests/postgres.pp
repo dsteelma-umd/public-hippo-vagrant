@@ -1,5 +1,5 @@
-package { 'httpd':
-  ensure => present,
+Package {
+  allow_virtual => false,
 }
 
 class { 'postgresql::globals':
@@ -7,6 +7,7 @@ class { 'postgresql::globals':
   version             => '9.5',
 }->
 class { 'postgresql::server': 
+  listen_addresses  => '*',
   postgres_password => 'postgres',
 }->
 
@@ -23,13 +24,17 @@ postgresql::server::database_grant { 'hippo':
   role      => 'hippo',
 }
 
-firewall { '100 allow http access to tomcat-cms':
-  dport => [80, 9600, 9603, 9604, 9605],
-  proto => tcp,
-  action => accept,
+postgresql::server::pg_hba_rule { 'allow application network to access app database':
+  description => 'Open up PostgreSQL for access from 192.168.55.0/24',
+  type        => 'host',
+  database    => 'hippo',
+  user        => 'hippo',
+  address     => '192.168.55.0/24',
+  auth_method => 'md5',
 }
-firewall { '110 allow http access to tomcat-site':
-  dport => [80, 9700, 9703, 9704, 9705],
+
+firewall { '100 allow access to PostgreSQL':
+  dport => [5432],
   proto => tcp,
   action => accept,
 }

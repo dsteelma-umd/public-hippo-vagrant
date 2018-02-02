@@ -1,74 +1,83 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
 Vagrant.configure(2) do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
-  config.vm.hostname = "wwwlocal"
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "puppetlabs/centos-6.6-64-puppet"
-  config.vm.box_version = "1.0.1"
+  # PostgreSQL server
+  config.vm.define "postgres" do |postgres|
+    postgres.vm.box = "puppetlabs/centos-6.6-64-puppet"
+    postgres.vm.box_version = "1.0.1"
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+    postgres.vm.hostname = 'pglocal'
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+    postgres.vm.network "private_network", ip: "192.168.55.100"
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  config.vm.network "private_network", ip: "192.168.55.10"
+    postgres.vm.provision "shell", inline: <<-SHELL
+      # puppetlabs-stdlib is "pinned" to v4.22.0 for v4.9.0 of puppetlabs-postgresql
+      puppet module install puppetlabs-stdlib --version 4.22.0
+      # puppetlabs-firewall is "pinned" to v1.10.0 for v4.9.0 of puppetlabs-postgresql
+      puppet module install puppetlabs-firewall --version 1.10.0
+      puppet module install puppetlabs-postgresql --version 4.9.0
+    SHELL
 
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-    vb.memory = "4096"
+    postgres.vm.provision "puppet", manifest_file: 'postgres.pp', environment: 'local'
   end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
 
-  # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
-  # such as FTP and Heroku are also available. See the documentation at
-  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
-  # config.push.define "atlas" do |push|
-  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
-  # end
+  # CMS Server
+  config.vm.define "cms" do |cms|
+    cms.vm.box = "puppetlabs/centos-6.6-64-puppet"
+    cms.vm.box_version = "1.0.1"
 
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  config.vm.provision "shell", path: "scripts/bootstrap.sh"
-  config.vm.provision "puppet"
-  config.vm.provision "shell", path: "scripts/apache.sh", privileged: false
-  config.vm.provision "shell", path: "scripts/tomcat.sh", privileged: false
-  config.vm.provision "shell", path: "scripts/hippo.sh", args: ENV["HIPPO_VERSION"] || [], privileged: false
+    cms.vm.provider "virtualbox" do |vb|
+       vb.memory = "4096"
+    end
+    
+    cms.vm.hostname = 'cmslocal'
+    cms.vm.network "private_network", ip: "192.168.55.10"
+
+    cms.vm.synced_folder "../public-hippo-cms-env", "/apps/git/public-hippo-cms-env"
+    
+    # Puppet Modules
+    cms.vm.provision "shell", inline: <<-SHELL
+      # puppetlabs-stdlib is "pinned" to v4.22.0 for "solr.pp"
+      puppet module install puppetlabs-stdlib --version 4.22.0
+      # puppetlabs-firewall is "pinned" to v1.10.0 for "solr.pp"
+      puppet module install puppetlabs-firewall --version 1.10.0
+    SHELL
+
+    # system provisioning
+    cms.vm.provision "puppet", manifest_file: 'cms.pp', environment: 'local'
+    
+    # JDK
+    cms.vm.provision "shell", path: 'scripts/jdk.sh'
+    
+    cms.vm.provision "shell", path: 'scripts/cms-https-cert.sh'
+        
+    cms.vm.provision "shell", path: 'scripts/cms.sh'
+    cms.vm.provision "shell", path: 'scripts/cms-hippo.sh', args: ENV["HIPPO_VERSION"] || [], privileged: false
+  end
+
+#  # Site
+#  config.vm.define "site" do |site|
+#    site.vm.box = "puppetlabs/centos-6.6-64-puppet"
+#    site.vm.box_version = "1.0.1"
+#
+#    site.vm.hostname = 'wwwlocal'
+#    site.vm.network "private_network", ip: "192.168.55.20"
+#
+#    # Puppet Modules
+#    site.vm.provision "shell", inline: <<-SHELL
+#      # puppetlabs-stdlib is "pinned" to v4.22.0 for "solr.pp"
+#      puppet module install puppetlabs-stdlib --version 4.22.0
+#      # puppetlabs-firewall is "pinned" to v1.10.0 for "solr.pp"
+#      puppet module install puppetlabs-firewall --version 1.10.0
+#    SHELL
+#
+#    # system provisioning
+#    site.vm.provision "puppet", manifest_file: 'site.pp', environment: 'local'
+#
+#    # JDK
+#    site.vm.provision "shell", path: 'scripts/jdk.sh'
+#  end
 end
+
